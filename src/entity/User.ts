@@ -18,6 +18,10 @@ export class User {
   @Column("text")
   password: string;
 
+  @Field()
+  @Column()
+  username: string;
+
   @BeforeInsert()
   async hashPasswordBeforeInsert() {
     this.password = await argon2.hash(this.password, { hashLength: 12 });
