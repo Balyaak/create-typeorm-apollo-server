@@ -15,10 +15,6 @@ export class User {
   email: string;
 
   @Field()
-  @Column("boolean", { default: false })
-  confirmed: boolean;
-
-  @Field()
   @Column("text")
   password: string;
 

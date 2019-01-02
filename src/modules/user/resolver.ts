@@ -2,8 +2,6 @@ import { Resolver, Mutation, Arg, Field, InputType } from "type-graphql";
 import { User } from "../../entity/User";
 import { InjectRepository } from "typeorm-typedi-extensions";
 import { Repository } from "typeorm";
-import { GraphQLScalarType } from "graphql";
-import { GraphQLUpload } from "graphql-upload";
 
 @InputType()
 export class RegisterInput implements Partial<User> {
@@ -23,7 +21,7 @@ export class UserResolver {
     @InjectRepository(User) private readonly userRepository: Repository<User>
   ) {}
 
-  @Mutation()
+  @Mutation(returns => User)
   async register(@Arg("register") registerInput: RegisterInput): Promise<User> {
     const user = this.userRepository.create({
       ...registerInput
