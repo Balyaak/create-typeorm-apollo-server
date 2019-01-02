@@ -1,17 +1,24 @@
 import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert } from "typeorm";
-import * as argon2 from "argon2";
 
+import * as argon2 from "argon2";
+import { ObjectType, Field } from "type-graphql";
+
+@ObjectType()
 @Entity()
 export class User {
+  @Field()
   @PrimaryGeneratedColumn("uuid")
   id: number;
 
+  @Field()
   @Column("varchar", { length: 255 })
   email: string;
 
+  @Field()
   @Column("boolean", { default: false })
   confirmed: boolean;
 
+  @Field()
   @Column("text")
   password: string;
 
