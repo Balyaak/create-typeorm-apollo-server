@@ -1,34 +1,42 @@
-import { Resolver, Mutation, Arg, Field, InputType, Query } from "type-graphql";
+import { Resolver, Mutation, Arg, Query } from "type-graphql";
 import { User } from "../../entity/User";
-import { InjectRepository } from "typeorm-typedi-extensions";
-import { Repository } from "typeorm";
-
-@InputType()
-export class RegisterInput implements Partial<User> {
-  @Field()
-  username: string;
-
-  @Field()
-  email: string;
-
-  @Field()
-  password: string;
-}
+import { RegisterInput } from "../types/registr-input";
 
 @Resolver(User)
 export class UserResolver {
   constructor() {}
 
-  @Query(() => String)
-  async me() {
-    return "hi";
+  @Query(returns => User, { nullable: true })
+  async me(@Arg("id", type => String) id: string) {
+    return await User.findOne(id);
   }
 
-  @Mutation(returns => User)
-  async register(@Arg("register") registerInput: RegisterInput): Promise<User> {
-    const user = User.create({
-      ...registerInput
+  @Mutation(returns => String)
+  async register(@Arg("input") input: RegisterInput) {
+    const { email, username, password } = input;
+    const userEmailAlreadyExists = await User.findOne({
+      where: { email },
+      select: ["id"]
     });
-    return await User.save(user);
+    const userNameAlreadyExists = await User.findOne({
+      where: { username },
+      select: ["id"]
+    });
+    if (userEmailAlreadyExists && userNameAlreadyExists) {
+      return "Username and email are in use";
+    }
+    if (userEmailAlreadyExists) {
+      return "Email is in use";
+    }
+
+    if (userNameAlreadyExists) {
+      return "Username is in use";
+    }
+    await User.create({
+      email,
+      username,
+      password
+    }).save();
+    return "Registration succesful";
   }
 }

@@ -7,17 +7,17 @@ import {
 } from "typeorm";
 
 import * as argon2 from "argon2";
-import { ObjectType, Field } from "type-graphql";
+import { ObjectType, Field, Authorized } from "type-graphql";
 
 @ObjectType()
 @Entity()
 export class User extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn("uuid")
-  id: number;
+  id: string;
 
   @Field()
-  @Column("varchar", { length: 255 })
+  @Column({ length: 255 })
   email: string;
 
   @Field()
