@@ -50,12 +50,11 @@ export class UserResolver {
       return "Invalid login";
     }
 
-    session.userId = user.id as any;
+    session.userId! = user.id;
 
     if (req.sessionID) {
-      await redis.lpush(`session:${user.id}`, req.sessionID);
+      await redis.lpush(`sess:${user.id}`, req.sessionID);
     }
-
-    return "Success";
+    return "Successful";
   }
 }

@@ -51,7 +51,7 @@ const startServer = async () => {
       }
     })
   );
-  
+
   server.applyMiddleware({ app });
 
   app.listen({ port: 4000 }, () => {
