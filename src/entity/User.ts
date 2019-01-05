@@ -17,16 +17,12 @@ export class User extends BaseEntity {
   id: string;
 
   @Field()
-  @Column({ length: 255 })
+  @Column("varchar", { length: 255 })
   email: string;
 
   @Field()
   @Column("text")
   password: string;
-
-  @Field()
-  @Column()
-  username: string;
 
   @BeforeInsert()
   async hashPasswordBeforeInsert() {

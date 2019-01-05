@@ -4,14 +4,10 @@ import { Field } from "type-graphql";
 import { IsEmail, MinLength, MaxLength, IsString } from "class-validator";
 
 @InputType()
-export class RegisterInput implements Partial<User> {
+export class LoginInput implements Partial<User> {
   @Field()
+  @IsEmail()
   @IsString()
-  username: string;
-
-  @Field()
-  @MinLength(3)
-  @MaxLength(255)
   email: string;
 
   @Field()
