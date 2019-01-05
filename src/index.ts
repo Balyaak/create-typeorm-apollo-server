@@ -29,8 +29,6 @@ const startServer = async () => {
     })
   });
 
-  server.applyMiddleware({ app });
-
   app.use(
     cors({
       credentials: true,
@@ -53,6 +51,8 @@ const startServer = async () => {
       }
     })
   );
+  
+  server.applyMiddleware({ app });
 
   app.listen({ port: 4000 }, () => {
     console.log("server online");
