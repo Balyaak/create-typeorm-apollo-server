@@ -2,7 +2,7 @@ import { Request } from "express";
 import { Redis } from "ioredis";
 
 export interface Session extends Express.Session {
-  userId?: String;
+  userId?: string;
 }
 
 export interface Context {

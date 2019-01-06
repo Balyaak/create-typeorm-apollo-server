@@ -7,7 +7,7 @@ import {
 } from "typeorm";
 
 import * as argon2 from "argon2";
-import { ObjectType, Field, Authorized } from "type-graphql";
+import { ObjectType, Field } from "type-graphql";
 
 @ObjectType()
 @Entity()
