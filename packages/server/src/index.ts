@@ -44,7 +44,7 @@ const startServer = async () => {
   app.use(
     cors({
       credentials: true,
-      origin: "http://localhost:3000"
+      origin: "http://localhost:4000"
     })
   );
   console.log(chalk.green.bold('DONE'))
@@ -74,7 +74,8 @@ const startServer = async () => {
   process.stdout.write(chalk.yellow(`\t+ ${chalk.white('Finishing ...')}`))
   app.listen({ port: process.env.PORT || 4000 }, () => {
     console.log(chalk.green.bold('DONE'))
-    console.log(chalk.yellow(`[${chalk.green.bold('!')}] ${chalk.green.bold(`Server started [http://localhost:${process.env.PORT || 4000}]`)}`));
+    console.log(chalk.yellow(`[${chalk.green.bold('!')}] ${chalk.green.bold(`Server started    \t[http://localhost:${process.env.PORT || 4000}]`)}`));
+    console.log(chalk.yellow(`[${chalk.magenta.bold('+')}] ${chalk.magenta.bold(`GraphQL Playground \t[http://localhost:${process.env.PORT || 4000}/graphql]`)}`));
   });
 };
 
