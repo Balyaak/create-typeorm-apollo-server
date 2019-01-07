@@ -26,20 +26,7 @@ const bootstrap = new Listr(
   [
     {
       title: "Database",
-      task: () => {
-        return new Observable(observer => {
-          observer.next("Connecting ...");
-
-          setTimeout(() => {
-            TypeORM.createConnection();
-            observer.next("Connected");
-          }, 500);
-
-          setTimeout(() => {
-            observer.complete();
-          }, 1000);
-        });
-      }
+      task: () => TypeORM.createConnection().catch((e)=>Promise.reject(e).then(()=>Promise.resolve()))
     },
     {
       title: "Creating express app instance",
@@ -99,7 +86,6 @@ const bootstrap = new Listr(
             origin: "http://localhost:4000"
           })
         );
-        setTimeout(() => {}, 100);
       }
     },
     {
@@ -122,14 +108,12 @@ const bootstrap = new Listr(
             }
           })
         );
-        await setTimeout(() => {}, 200);
       }
     },
     {
       title: "Applying middleware tp ApolloServer",
       task: async (ctx: any) => {
         ctx.server.applyMiddleware({ app: ctx.app });
-        await setTimeout(() => {}, 50);
       }
     },
     {
