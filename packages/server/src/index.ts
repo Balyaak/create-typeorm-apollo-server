@@ -12,9 +12,7 @@ import * as TypeORM from "typeorm";
 import * as TypeGraphQL from "type-graphql";
 
 import chalk from "chalk";
-import * as execa from "execa";
 import * as Listr from "listr";
-import { HEADER_TITLE } from "../../cli/src/header";
 
 import { Observable } from "rxjs";
 
@@ -45,7 +43,7 @@ const bootstrap = new Listr(
     },
     {
       title: "Creating express app instance",
-      task: ctx => {
+      task: (ctx: any) => {
         return new Observable(observer => {
           observer.next("Creating ...");
           ctx.app = express();
@@ -57,13 +55,13 @@ const bootstrap = new Listr(
     },
     {
       title: "Creating redis client instance",
-      task: ctx => {
+      task: (ctx: any) => {
         ctx.redis = new Redis();
       }
     },
     {
       title: "Creating apollo server instance",
-      task: async ctx =>
+      task: async (ctx: any) =>
         Promise.resolve(
           (ctx.server = new ApolloServer({
             schema: await TypeGraphQL.buildSchema({
@@ -79,7 +77,7 @@ const bootstrap = new Listr(
     },
     {
       title: "Using cors",
-      task: ctx => {
+      task: (ctx: any) => {
         ctx.app.use(
           cors({
             credentials: true,
@@ -91,7 +89,7 @@ const bootstrap = new Listr(
     },
     {
       title: "Using session",
-      task: async ctx => {
+      task: async (ctx: any) => {
         ctx.app.use(
           session({
             store: new RedisStore({
@@ -113,14 +111,14 @@ const bootstrap = new Listr(
     },
     {
       title: "Applying middleware tp ApolloServer",
-      task: async ctx => {
+      task: async (ctx: any) => {
         ctx.server.applyMiddleware({ app: ctx.app });
         await setTimeout(() => {}, 50);
       }
     },
     {
       title: "Finishing Server",
-      task: ctx => {
+      task: (ctx: any) => {
         return new Observable(observer => {
           observer.next("Starting ...");
 
