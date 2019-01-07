@@ -5,18 +5,17 @@ import { LoginInput } from "./login-input";
 import * as argon2 from "argon2";
 import { Context } from "../types/Context";
 
-//@todo : Add response object
+// @todo : Add response object
 @Resolver(User)
 export class UserResolver {
   constructor() {}
 
-  @Query(returns => User, { nullable: true })
-  async me(@Arg("id", type => String) id: string, @Ctx() { session }: Context) {
-    const later = "{where: { id: session.userId } }";
-    return await User.findOne({ where: { id: session.userId } });
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() { session }: Context) {
+    return User.findOne({ where: { id: session.userId } });
   }
 
-  @Mutation(returns => String)
+  @Mutation(() => String)
   async register(@Arg("input") { email, password }: RegisterInput) {
     const userAlreadyExists = await User.findOne({
       where: { email },
@@ -34,11 +33,14 @@ export class UserResolver {
     return "Registration succesful";
   }
 
-  @Mutation(returns => String)
+  @Mutation(() => String)
   async login(
     @Arg("input") { email, password }: LoginInput,
     @Ctx() { req, session, redis }: Context
   ) {
+    if (req.session!.userId) {
+      return "Already logged in";
+    }
     const user = await User.findOne({ where: { email } });
 
     if (!user) {

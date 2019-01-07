@@ -5,7 +5,8 @@
     ],
     "devDependencies": {
         "prettier": "^1.15.3",
-        "tslint": "^5.12.0"
+        "tslint": "^5.12.0",
+        "tslint-config-prettier": "^1.17.0"
     },
     "scripts": {
         "start:cli": "cd ./packages/cli && yarn start",

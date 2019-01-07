@@ -1,4 +1,4 @@
-# **Typeorm-Apollo-Express-Server**
+# **(WIP)Typeorm-Apollo-Express-Server**
 ___
 ## Features:
 * Easy Database setup

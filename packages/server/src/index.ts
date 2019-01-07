@@ -71,7 +71,22 @@ const bootstrap = new Listr(
               req,
               session: req.session,
               redis: ctx.redis
-            })
+            }),
+            playground: {
+              settings: {
+                // put in entire setting object because of bug with Typscript and apollo-server (issue #1713)
+                "general.betaUpdates": false,
+                "editor.cursorShape": "line",
+                "editor.fontSize": 14,
+                "editor.fontFamily":
+                  "'Source Code Pro', 'Consolas', 'Inconsolata', 'Droid Sans Mono', 'Monaco', monospace",
+                "editor.theme": "dark",
+                "editor.reuseHeaders": true,
+                "prettier.printWidth": 80,
+                "request.credentials": "same-origin",
+                "tracing.hideTracingResponse": true
+              }
+            }
           }))
         )
     },
@@ -96,13 +111,14 @@ const bootstrap = new Listr(
               client: ctx.redis as any
             }),
             name: "msh",
-            secret: process.env.SESSION_SECRET as any,
+            secret: "Secret Stuff that you should probably change",
             resave: false,
             saveUninitialized: false,
             cookie: {
               httpOnly: true,
-              secure: process.env.NODE_ENV == "production",
-              maxAge: 1000 * 60 * 60 * 24 * 7 //One week
+              secure: process.env.NODE_ENV === "production",
+              maxAge: 1000 * 60 * 60 * 24 * 7, // One week
+              path: "/graphql" // Done for testing resolvers in playground
             }
           })
         );
