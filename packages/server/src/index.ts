@@ -26,7 +26,9 @@ const bootstrap = new Listr(
   [
     {
       title: "Database",
-      task: () => TypeORM.createConnection().catch((e)=>Promise.reject(e).then(()=>Promise.resolve()))
+      task: () =>
+        TypeORM.createConnection().catch(e =>{
+          return Promise.reject(e)}).then(() => Promise.resolve())
     },
     {
       title: "Creating express app instance",
@@ -126,26 +128,27 @@ const bootstrap = new Listr(
             ctx.app.listen({ port: process.env.PORT || 4000 }, () => {
               observer.complete();
             });
-          }, 3000);
+          }, 5000);
         });
       }
     }
   ],
   {
     concurrent: false,
-    exitOnError: false
+    exitOnError: true
   }
 );
 
 console.log(chalk.yellow("[*] Starting up server ..."));
 bootstrap
   .run()
-  .catch((err: Error) => {
+  .catch((err) => {
     console.log(
       chalk.yellow(
         `[${chalk.red.bold("!")}] ${chalk.red.bold("ERROR : ")} ${err}`
       )
     );
+    process.exit(1);
   })
   .then(() => {
     console.log(
