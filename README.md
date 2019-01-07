@@ -1,0 +1,28 @@
+# **Typeorm-Apollo-Express-Server**
+
+## Features:
+* Easy Database setup
+* Powerful Apollo Server integration
+* Typed GraphQL
+* TypeORM integrated
+* CLI for easy setup
+* Auth and Session premade
+* Simple user entity
+* Easy customizable
+
+## Installation
+```
+# Clone the repository
+git clone https://github.com/Balyaak/typeorm-apollo-express-server
+
+# cd into it
+cd typeorm-apollo-express-server
+
+# install using yarn
+yarn install
+# if there is no yarn just use npm
+npm i
+
+# run Project
+yarn start
+```
