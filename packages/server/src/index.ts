@@ -2,90 +2,154 @@ import "reflect-metadata";
 import "dotenv/config";
 import * as express from "express";
 import { ApolloServer } from "apollo-server-express";
-import { buildSchema } from "type-graphql";
-import { createConnection } from "typeorm";
 import * as session from "express-session";
 import * as connectRedis from "connect-redis";
 import * as cors from "cors";
 import * as Redis from "ioredis";
+
+import { Container } from "typedi";
+import * as TypeORM from "typeorm";
+import * as TypeGraphQL from "type-graphql";
+
 import chalk from "chalk";
+import * as execa from "execa";
+import * as Listr from "listr";
+import { HEADER_TITLE } from "../../cli/src/header";
+
+import { Observable } from "rxjs";
 
 const RedisStore = connectRedis(session as any);
 
-const startServer = async () => {
-  console.log(chalk.yellow("[*] Starting up server ..."));
+// register 3rd party IOC container
+TypeGraphQL.useContainer(Container);
+TypeORM.useContainer(Container);
 
-  process.stdout.write(
-    chalk.yellow(`\t+ ${chalk.white("Creating database connection ...")}`)
-  );
-  await createConnection();
-  console.log(chalk.green.bold("DONE"));
+const bootstrap = new Listr(
+  [
+    {
+      title: "Database",
+      task: () => {
+        return new Observable(observer => {
+          observer.next("Connecting ...");
 
-  process.stdout.write(
-    chalk.yellow(`\t+ ${chalk.white("Creating express app ...")}`)
-  );
-  const app = express();
-  console.log(chalk.green.bold("DONE"));
+          setTimeout(() => {
+            TypeORM.createConnection();
+            observer.next("Connected");
+          }, 500);
 
-  process.stdout.write(
-    chalk.yellow(`\t+ ${chalk.white("Creating redis client instance ...")}`)
-  );
-  const redis = new Redis();
-  console.log(chalk.green.bold("DONE"));
-
-  process.stdout.write(
-    chalk.yellow(`\t+ ${chalk.white("Creating apollo server instance ...")}`)
-  );
-  const server = new ApolloServer({
-    schema: await buildSchema({
-      resolvers: [__dirname + "/modules/**/resolver.*"]
-    }),
-    context: ({ req }: any) => ({
-      req,
-      session: req.session,
-      redis
-    })
-  });
-  console.log(chalk.green.bold("DONE"));
-
-  process.stdout.write(chalk.yellow(`\t+ ${chalk.white("Using cors ...")}`));
-  app.use(
-    cors({
-      credentials: true,
-      origin: "http://localhost:4000"
-    })
-  );
-  console.log(chalk.green.bold("DONE"));
-
-  process.stdout.write(chalk.yellow(`\t+ ${chalk.white("Using session ...")}`));
-  app.use(
-    session({
-      store: new RedisStore({
-        client: redis as any
-      }),
-      name: "msh",
-      secret: process.env.SESSION_SECRET as any,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7 //One week
+          setTimeout(() => {
+            observer.complete();
+          }, 1000);
+        });
       }
-    })
-  );
-  console.log(chalk.green.bold("DONE"));
+    },
+    {
+      title: "Creating express app instance",
+      task: ctx => {
+        return new Observable(observer => {
+          observer.next("Creating ...");
+          ctx.app = express();
+          setTimeout(() => {
+            observer.complete();
+          }, 1300);
+        });
+      }
+    },
+    {
+      title: "Creating redis client instance",
+      task: ctx => {
+        ctx.redis = new Redis();
+      }
+    },
+    {
+      title: "Creating apollo server instance",
+      task: async ctx =>
+        Promise.resolve(
+          (ctx.server = new ApolloServer({
+            schema: await TypeGraphQL.buildSchema({
+              resolvers: [__dirname + "/modules/**/resolver.*"]
+            }),
+            context: ({ req }: any) => ({
+              req,
+              session: req.session,
+              redis: ctx.redis
+            })
+          }))
+        )
+    },
+    {
+      title: "Using cors",
+      task: ctx => {
+        ctx.app.use(
+          cors({
+            credentials: true,
+            origin: "http://localhost:4000"
+          })
+        );
+        setTimeout(() => {}, 100);
+      }
+    },
+    {
+      title: "Using session",
+      task: async ctx => {
+        ctx.app.use(
+          session({
+            store: new RedisStore({
+              client: ctx.redis as any
+            }),
+            name: "msh",
+            secret: process.env.SESSION_SECRET as any,
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+              httpOnly: true,
+              secure: process.env.NODE_ENV == "production",
+              maxAge: 1000 * 60 * 60 * 24 * 7 //One week
+            }
+          })
+        );
+        await setTimeout(() => {}, 200);
+      }
+    },
+    {
+      title: "Applying middleware tp ApolloServer",
+      task: async ctx => {
+        ctx.server.applyMiddleware({ app: ctx.app });
+        await setTimeout(() => {}, 50);
+      }
+    },
+    {
+      title: "Finishing Server",
+      task: ctx => {
+        return new Observable(observer => {
+          observer.next("Starting ...");
 
-  process.stdout.write(
-    chalk.yellow(
-      `\t+ ${chalk.white("Applying middleware to ApolloServer ...")}`
-    )
-  );
-  server.applyMiddleware({ app });
-  console.log(chalk.green.bold("DONE"));
+          setTimeout(() => {
+            ctx.app.listen({ port: process.env.PORT || 4000 }, () => {
+              observer.complete();
+            });
+          }, 3000);
+        });
+      }
+    }
+  ],
+  {
+    concurrent: false,
+    exitOnError: false
+  }
+);
 
-  process.stdout.write(chalk.yellow(`\t+ ${chalk.white("Finishing ...")}`));
-  app.listen({ port: process.env.PORT || 4000 }, () => {
-    console.log(chalk.green.bold("DONE"));
+console.log(chalk.yellow("[*] Starting up server ..."));
+bootstrap
+  .run()
+  .catch((err: Error) => {
+    console.log(
+      chalk.yellow(
+        `[${chalk.red.bold("!")}] ${chalk.red.bold("ERROR : ")} ${err}`
+      )
+    );
+  })
+  .then(() => {
     console.log(
       chalk.yellow(
         `[${chalk.green.bold("!")}] ${chalk.green.bold(
@@ -102,6 +166,3 @@ const startServer = async () => {
       )
     );
   });
-};
-
-startServer();
