@@ -15,7 +15,7 @@ import chalk from "chalk";
 import * as Listr from "listr";
 
 import { Observable } from "rxjs";
-import { Http2Server } from "http2";
+import { customAuthChecker } from "./utils/authChecker";
 
 const RedisStore = connectRedis(session as any);
 
@@ -58,7 +58,8 @@ const bootstrap = new Listr(
         Promise.resolve(
           (ctx.server = new ApolloServer({
             schema: await TypeGraphQL.buildSchema({
-              resolvers: [__dirname + "/modules/**/resolver.*"]
+              resolvers: [__dirname + "/modules/**/resolver.*"],
+              authChecker: customAuthChecker
             }),
             context: ({ req }: any) => ({
               req,
@@ -100,7 +101,7 @@ const bootstrap = new Listr(
         ctx.app.use(
           session({
             store: new RedisStore({
-              client: ctx.redis as any
+              client: ctx.redis as any,
             }),
             name: "msh",
             secret: process.env.SECRET || 'Standart Secret Password',

@@ -1,4 +1,4 @@
-import { Resolver, Mutation, Arg, Query, Ctx } from "type-graphql";
+import { Resolver, Mutation, Arg, Query, Ctx, Authorized } from "type-graphql";
 import { User } from "../../entity/User";
 import { RegisterInput } from "./registr-input";
 import { LoginInput } from "./login-input";
@@ -59,4 +59,29 @@ export class UserResolver {
     }
     return "Successful";
   }
+
+  @Authorized()
+  @Mutation( () => String)
+  async logout (@Arg("logoutAll") logoutAll: boolean, @Ctx() {session, redis}:Context){
+    const sessionIds = await redis.lrange(`sess:${session.userId}`, 0, -1);
+    if(logoutAll){
+      const promises = [];
+      for(const sessionId of sessionIds){
+        promises.push(redis.del(`sess:${sessionId}`))
+      }
+      await Promise.all(promises);
+      return "Logged out from all sessions";
+    } else {
+      await redis.lrem(`sess:${session.userId}`, 0, `sess:${session.id}`);
+    }
+    session.destroy(err => {
+      if (err){
+        console.log(err);
+      }
+    });
+    return "Logged out";
 }
+
+}
+
+
