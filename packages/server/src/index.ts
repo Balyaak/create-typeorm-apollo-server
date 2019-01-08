@@ -15,6 +15,7 @@ import chalk from "chalk";
 import * as Listr from "listr";
 
 import { Observable } from "rxjs";
+import { customAuthChecker } from "./utils/authChecker";
 
 const RedisStore = connectRedis(session as any);
 
@@ -27,8 +28,11 @@ const bootstrap = new Listr(
     {
       title: "Database",
       task: () =>
-        TypeORM.createConnection().catch(e =>{
-          return Promise.reject(e)}).then(() => Promise.resolve())
+        TypeORM.createConnection()
+          .catch(e => {
+            return Promise.reject(e);
+          })
+          .then(() => Promise.resolve())
     },
     {
       title: "Creating express app instance",
@@ -54,7 +58,8 @@ const bootstrap = new Listr(
         Promise.resolve(
           (ctx.server = new ApolloServer({
             schema: await TypeGraphQL.buildSchema({
-              resolvers: [__dirname + "/modules/**/resolver.*"]
+              resolvers: [__dirname + "/modules/**/resolver.*"],
+              authChecker: customAuthChecker
             }),
             context: ({ req }: any) => ({
               req,
@@ -96,7 +101,8 @@ const bootstrap = new Listr(
         ctx.app.use(
           session({
             store: new RedisStore({
-              client: ctx.redis as any
+              client: ctx.redis as any,
+              prefix: "sess:"
             }),
             name: "msh",
             secret: "Secret Stuff that you should probably change",
@@ -142,7 +148,7 @@ const bootstrap = new Listr(
 console.log(chalk.yellow("[*] Starting up server ..."));
 bootstrap
   .run()
-  .catch((err) => {
+  .catch(err => {
     console.log(
       chalk.yellow(
         `[${chalk.red.bold("!")}] ${chalk.red.bold("ERROR : ")} ${err}`
