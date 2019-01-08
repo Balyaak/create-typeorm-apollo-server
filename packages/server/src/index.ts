@@ -15,6 +15,7 @@ import chalk from "chalk";
 import * as Listr from "listr";
 
 import { Observable } from "rxjs";
+import { Http2Server } from "http2";
 
 const RedisStore = connectRedis(session as any);
 
@@ -27,8 +28,11 @@ const bootstrap = new Listr(
     {
       title: "Database",
       task: () =>
-        TypeORM.createConnection().catch(e =>{
-          return Promise.reject(e)}).then(() => Promise.resolve())
+        TypeORM.createConnection()
+          .catch(e => {
+            return Promise.reject(e);
+          })
+          .then(() => Promise.resolve())
     },
     {
       title: "Creating express app instance",
@@ -114,7 +118,7 @@ const bootstrap = new Listr(
     },
     {
       title: "Applying middleware tp ApolloServer",
-      task: async (ctx: any) => {
+      task: (ctx: any) => {
         ctx.server.applyMiddleware({ app: ctx.app });
       }
     },
@@ -123,12 +127,12 @@ const bootstrap = new Listr(
       task: (ctx: any) => {
         return new Observable(observer => {
           observer.next("Starting ...");
-
-          setTimeout(() => {
-            ctx.app.listen({ port: process.env.PORT || 4000 }, () => {
-              observer.complete();
+          ctx.app_server = ctx.app
+            .listen({ port: process.env.PORT || 4000 })
+            .setTimeout(5000, () => {
+              observer.error("Server timed out");
             });
-          }, 5000);
+            observer.complete();
         });
       }
     }
@@ -142,7 +146,7 @@ const bootstrap = new Listr(
 console.log(chalk.yellow("[*] Starting up server ..."));
 bootstrap
   .run()
-  .catch((err) => {
+  .catch(err => {
     console.log(
       chalk.yellow(
         `[${chalk.red.bold("!")}] ${chalk.red.bold("ERROR : ")} ${err}`
@@ -150,7 +154,7 @@ bootstrap
     );
     process.exit(1);
   })
-  .then(() => {
+  .then(ctx => {
     console.log(
       chalk.yellow(
         `[${chalk.green.bold("!")}] ${chalk.green.bold(
@@ -166,4 +170,12 @@ bootstrap
         )}`
       )
     );
+
+    process.on("SIGINT", function() {
+      console.log(chalk.yellow("[*] Caught Interruption signal"));
+      ctx.app_server.close(()=>{
+        console.log(chalk.yellow("[*] Stopped Server..."));
+        process.exit(0);
+      });
+    });
   });
