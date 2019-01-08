@@ -103,7 +103,7 @@ const bootstrap = new Listr(
               client: ctx.redis as any
             }),
             name: "msh",
-            secret: "Secret Stuff that you should probably change",
+            secret: process.env.SECRET || 'Standart Secret Password',
             resave: false,
             saveUninitialized: false,
             cookie: {
