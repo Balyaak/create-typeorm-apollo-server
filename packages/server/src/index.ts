@@ -59,7 +59,8 @@ const bootstrap = new Listr(
           (ctx.server = new ApolloServer({
             schema: await TypeGraphQL.buildSchema({
               resolvers: [__dirname + "/modules/**/resolver.*"],
-              authChecker: customAuthChecker
+              authChecker: customAuthChecker,
+              authMode: "null",
             }),
             context: ({ req }: any) => ({
               req,
@@ -173,7 +174,7 @@ bootstrap
     );
 
     process.on("SIGINT", function() {
-      console.log(chalk.yellow("[*] Caught Interruption signal"));
+      console.log(chalk.yellow("\n[*] Caught Interruption signal"));
       ctx.app_server.close(()=>{
         console.log(chalk.yellow("[*] Stopped Server..."));
         process.exit(0);

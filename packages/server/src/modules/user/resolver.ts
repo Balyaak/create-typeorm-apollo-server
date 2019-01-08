@@ -4,6 +4,8 @@ import { RegisterInput } from "./registr-input";
 import { LoginInput } from "./login-input";
 import * as argon2 from "argon2";
 import { Context } from "../types/Context";
+import { Response } from "../../entity/Response";
+import { formatResponse } from "../../utils/foramtResponse";
 
 // @todo : Add response object
 @Resolver(User)
@@ -15,7 +17,7 @@ export class UserResolver {
     return User.findOne({ where: { id: session.userId } });
   }
 
-  @Mutation(() => String)
+  @Mutation(() => Response)
   async register(@Arg("input") { email, password }: RegisterInput) {
     const userAlreadyExists = await User.findOne({
       where: { email },
@@ -23,33 +25,33 @@ export class UserResolver {
     });
 
     if (userAlreadyExists) {
-      return "Email is in use";
+      return formatResponse(new Response("Email", "Email is in use", true));
     }
 
     await User.create({
       email,
       password
     }).save();
-    return "Registration succesful";
+    return formatResponse(new Response("Success", "You successfully registered a new user"));
   }
 
-  @Mutation(() => String)
+  @Mutation(() => Response)
   async login(
     @Arg("input") { email, password }: LoginInput,
     @Ctx() { req, session, redis }: Context
   ) {
     if (req.session!.userId) {
-      return "Already logged in";
+      return formatResponse(new Response("Success", "You are successfully logged in"));
     }
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return "Invalid login";
+      return formatResponse(new Response("Login", "invalid login", true));
     }
 
     const passwordValid = argon2.verify(user.password, password);
     if (!passwordValid) {
-      return "Invalid login";
+      return new Response("Login", "invalid login", true);
     }
 
     session.userId! = user.id;
@@ -57,31 +59,36 @@ export class UserResolver {
     if (req.sessionID) {
       await redis.lpush(`sess:${user.id}`, req.sessionID);
     }
-    return "Successful";
+    return formatResponse(new Response("Success", "You are successfully logged in"));
   }
 
   @Authorized()
-  @Mutation( () => String)
-  async logout (@Arg("logoutAll") logoutAll: boolean, @Ctx() {session, redis}:Context){
-    const sessionIds = await redis.lrange(`sess:${session.userId}`, 0, -1);
-    if(logoutAll){
-      const promises = [];
-      for(const sessionId of sessionIds){
-        promises.push(redis.del(`sess:${sessionId}`))
+  @Mutation(() => Response, {nullable: true})
+  async logout(
+    @Ctx() { session, redis }: Context,
+    @Arg("logoutAll") logoutAll?: boolean,
+  ) {
+    try {
+      const sessionIds = await redis.lrange(`sess:${session.userId}`, 0, -1);
+      if (logoutAll) {
+        const promises = [];
+        for (const sessionId of sessionIds) {
+          promises.push(redis.del(`sess:${sessionId}`));
+        }
+        await Promise.all(promises);
+        return formatResponse(new Response("Success", "You are successfully logged out"));
+      } else {
+        await redis.lrem(`sess:${session.userId}`, 0, `sess:${session.id}`);
       }
-      await Promise.all(promises);
-      return "Logged out from all sessions";
-    } else {
-      await redis.lrem(`sess:${session.userId}`, 0, `sess:${session.id}`);
+
+      session.destroy(err => {
+        if (err) {
+          console.log(err);
+        }
+      });
+      return formatResponse(new Response("Success", "You are successfully logged out"));
+    } catch (err) {
+      return formatResponse(new Response("Error", "No active sessions", true));
     }
-    session.destroy(err => {
-      if (err){
-        console.log(err);
-      }
-    });
-    return "Logged out";
+  }
 }
-
-}
-
-
